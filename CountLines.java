@@ -4,7 +4,7 @@ import java.io.IOException;
 
 public class CountLines {
     public static void main(String[] args) {
-        String fileName = "datos.txt";
+        String fileName = "file1.txt";
         int count = 0;
 
         try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
