@@ -2,123 +2,112 @@ import java.io.*;
 
 public class RandomAccessEmployee {
 
-    private static final int RECORD_SIZE = 16; // Each record: 4 bytes ID + 4 bytes department + 8 bytes salary
+    private static final int RECORD_SIZE = 16;
 
     public static void main(String[] args) throws IOException {
-        File filePath = new File("RandomEmployees.dat");
-        // Create a random access file, read-write mode
-        RandomAccessFile file = new RandomAccessFile(filePath, "rw");
+        File fileObject = new File("EmployeeData.dat");
+        RandomAccessFile file = new RandomAccessFile(fileObject, "rw");
 
-        // Arrays with initial employee data
-        int departments[] = {10, 20, 10, 10, 30, 30, 20};
-        Double salaries[] = {1000.45, 2400.60, 3000.0, 1500.56, 2200.0, 1435.87, 2000.0};
+        int[] departments = {10, 20, 10, 10, 30, 30, 20};
+        double[] salaries = {1000.45, 2400.60, 3000.0, 1500.56, 2200.0, 1435.87, 2000.0};
 
-        int n = salaries.length; // Number of employees
+        int n = salaries.length;
 
-        // Write initial data to the file
         for (int i = 0; i < n; i++) {
-            file.writeInt(i + 1);       // Employee ID (starting from 1)
-            file.writeInt(departments[i]); // Department
-            file.writeDouble(salaries[i]); // Salary
+            file.writeInt(i + 1);
+            file.writeInt(departments[i]);
+            file.writeDouble(salaries[i]);
         }
-
-        // --- EXAMPLE: read the third employee ---
-        file.seek(2 * RECORD_SIZE); // Index 2 -> third employee
-        System.out.println("Employee ID " + file.readInt() +
-                " Dept: " + file.readInt() +
-                " Salary: " + file.readDouble());
-
         file.close();
+
+        file = new RandomAccessFile(fileObject, "rw");
+
+        file.seek(2 * RECORD_SIZE);
+        System.out.println("Employee No: " + file.readInt() + " | Dept: " + file.readInt() + " | Salary: " + file.readDouble());
+
+        file.seek(0);
+        while (file.getFilePointer() < file.length()) {
+            int id = file.readInt();
+            int dept = file.readInt();
+            double salary = file.readDouble();
+            System.out.println("ID: " + id + " | Dept: " + dept + " | Salary: " + salary);
+        }
     }
 
-    // --- QUERY EMPLOYEE ---
+    // 1. Query
     public static void query(RandomAccessFile file, int id) throws IOException {
-        boolean found = false;
-        file.seek(0); // start from the beginning
+        file.seek(0);
         while (file.getFilePointer() < file.length()) {
             int currentId = file.readInt();
             int dept = file.readInt();
             double salary = file.readDouble();
+
             if (currentId == id) {
-                System.out.println("Employee ID " + currentId + " Dept: " + dept + " Salary: " + salary);
-                found = true;
-                break;
+                System.out.println("Employee: " + currentId + " | Dept: " + dept + " | Salary: " + salary);
+                return;
             }
         }
-        if (!found) {
-            System.out.println("Employee " + id + " does not exist.");
-        }
+        System.out.println("Employee " + id + " not found.");
     }
 
-    // --- INSERT EMPLOYEE ---
+    // 2. Insert
     public static void insert(RandomAccessFile file, int id, int dept, double salary) throws IOException {
-        boolean exists = false;
         file.seek(0);
         while (file.getFilePointer() < file.length()) {
             int currentId = file.readInt();
-            file.readInt();   // skip department
-            file.readDouble(); // skip salary
+            file.skipBytes(12);
             if (currentId == id) {
-                exists = true;
-                break;
+                System.out.println("Employee " + id + " already exists.");
+                return;
             }
         }
-        if (exists) {
-            System.out.println("Employee " + id + " already exists.");
-        } else {
-            file.seek(file.length()); // move to the end of the file
-            file.writeInt(id);
-            file.writeInt(dept);
-            file.writeDouble(salary);
-            System.out.println("Employee " + id + " inserted successfully.");
-        }
+
+        file.seek(file.length());
+        file.writeInt(id);
+        file.writeInt(dept);
+        file.writeDouble(salary);
+        System.out.println("Employee " + id + " inserted successfully.");
     }
 
-    // --- MODIFY EMPLOYEE SALARY ---
-    public static void modify(RandomAccessFile file, int id, double amount) throws IOException {
-        boolean found = false;
+    // 3. Modify salary
+    public static void modify(RandomAccessFile file, int id, double change) throws IOException {
         file.seek(0);
         while (file.getFilePointer() < file.length()) {
             long position = file.getFilePointer();
             int currentId = file.readInt();
             int dept = file.readInt();
             double salary = file.readDouble();
+
             if (currentId == id) {
-                double newSalary = salary + amount;
-                file.seek(position + 8); // move to the start of the salary field
+                double newSalary = salary + change;
+                file.seek(position + 8);
                 file.writeDouble(newSalary);
-                System.out.println("Employee " + id + " -> Old Salary: " + salary + ", New Salary: " + newSalary);
-                found = true;
-                break;
+                System.out.println("Employee " + id +
+                        " | Old Salary: " + salary +
+                        " | New Salary: " + newSalary);
+                return;
             }
         }
-        if (!found) {
-            System.out.println("Employee " + id + " does not exist.");
-        }
+        System.out.println("Employee " + id + " not found.");
     }
 
-    // --- LOGICAL DELETE EMPLOYEE ---
+    // 4. Logical delete
     public static void delete(RandomAccessFile file, int id) throws IOException {
-        boolean found = false;
         file.seek(0);
         while (file.getFilePointer() < file.length()) {
             long position = file.getFilePointer();
             int currentId = file.readInt();
-            file.readInt();   // skip department
-            file.readDouble(); // skip salary
+            file.skipBytes(12);
+
             if (currentId == id) {
-                file.seek(position);       // go back to the start of the record
-                file.writeInt(-1);         // mark ID as deleted
-                file.writeInt(0);          // set department to 0
-                file.writeDouble(0.0);     // set salary to 0
+                file.seek(position);
+                file.writeInt(-1);
+                file.writeInt(0);
+                file.writeDouble(0.0);
                 System.out.println("Employee " + id + " deleted successfully.");
-                found = true;
-                break;
+                return;
             }
         }
-        if (!found) {
-            System.out.println("Employee " + id + " does not exist.");
-        }
+        System.out.println("Employee " + id + " not found.");
     }
 }
-
