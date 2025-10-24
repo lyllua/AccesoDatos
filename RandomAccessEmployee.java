@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.Scanner;
 
 public class RandomAccessEmployee {
 
@@ -32,8 +33,68 @@ public class RandomAccessEmployee {
             double salary = file.readDouble();
             System.out.println("ID: " + id + " | Dept: " + dept + " | Salary: " + salary);
         }
-    }
+        
+        Scanner sc = new Scanner(System.in);
+        int option;
+        do {
+            System.out.println("\n---- Employee Menu ----");
+            System.out.println("1. Query employee");
+            System.out.println("2. Insert employee");
+            System.out.println("3. Modify salary");
+            System.out.println("4. Delete employee");
+            System.out.println("5. List all employees");
+            System.out.println("0. Exit");
+            System.out.print("Choose an option: ");
+            option = sc.nextInt();
 
+            switch (option) {
+                case 1 -> {
+                    System.out.print("Enter employee ID to query: ");
+                    int id = sc.nextInt();
+                    query(file, id);
+                }
+                case 2 -> {
+                    System.out.print("Enter new employee ID: ");
+                    int id = sc.nextInt();
+                    System.out.print("Enter department: ");
+                    int dept = sc.nextInt();
+                    System.out.print("Enter salary: ");
+                    double sal = sc.nextDouble();
+                    insert(file, id, dept, sal);
+                }
+                case 3 -> {
+                    System.out.print("Enter employee ID to modify: ");
+                    int id = sc.nextInt();
+                    System.out.print("Enter salary change: ");
+                    double change = sc.nextDouble();
+                    modify(file, id, change);
+                }
+                case 4 -> {
+                    System.out.print("Enter employee ID to delete: ");
+                    int id = sc.nextInt();
+                    delete(file, id);
+                }
+                case 5 -> {
+                    file.seek(0);
+                    System.out.println("\n--- Employee List ---");
+                    while (file.getFilePointer() < file.length()) {
+                        int id = file.readInt();
+                        int dept = file.readInt();
+                        double salary = file.readDouble();
+                        if (id != -1) {
+                            System.out.println("ID: " + id + " | Dept: " + dept + " | Salary: " + salary);
+                        }
+                    }
+                }
+                case 0 -> System.out.println("Exiting program...");
+                default -> System.out.println("Invalid option.");
+            }
+        } while (option != 0);
+
+        file.close();
+        sc.close();
+    }
+    
     // 1. Query
     public static void query(RandomAccessFile file, int id) throws IOException {
         file.seek(0);
@@ -82,9 +143,7 @@ public class RandomAccessEmployee {
                 double newSalary = salary + change;
                 file.seek(position + 8);
                 file.writeDouble(newSalary);
-                System.out.println("Employee " + id +
-                        " | Old Salary: " + salary +
-                        " | New Salary: " + newSalary);
+                System.out.println("Employee " + id + " | Old Salary: " + salary + " | New Salary: " + newSalary);
                 return;
             }
         }
